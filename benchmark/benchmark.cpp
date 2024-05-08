@@ -13,6 +13,7 @@
 #include <vector>
 #include <chrono>
 #include <set>
+#include <future>
 #include "../global/psi_utils.h"
 #include "../client/Recon.h"
 #include "../client/Elementholder.h"
@@ -199,19 +200,10 @@ vector<vector<Share>> generate_shares_of_id(
     if(!fast_sharegen){
         for (int i = 0; i< elementholder.num_elements; i++){
             if (scheme==1)
-                share_x = elementholder.get_share_1(context, elementholder.elements[i], elem_holder, num_bins);    
-            else
-                share_x = elementholder.get_share_0(context, elementholder.elements[i], elem_holder, num_bins);
+                share_x = elementholder.get_share_1(context, elementholder.elements[i], elem_holder, num_bins);
+            // Mapping element -> SS
+            // cout << "For user " << elementholder.id << ", element: " << elementholder.elements[i] << " corresponds to " << ZZ_to_str(share_x.SS) << endl;
             shares_bins[conv<int>(share_x.bin)].push_back(share_x);
-        }
-    }
-    else{
-        for (int i = 0; i< elementholder.num_elements; i++){
-            if (scheme==1)
-                share_x = get_fast_share_1(context, elementholder.elements[i], num_bins, keyholder, elementholder.id);
-            else
-                share_x = get_fast_share_0(context, elementholder.elements[i], num_bins, keyholder, elementholder.id);
-            shares_bins[conv<int>(share_x.bin)].push_back(share_x);      
         }
     }
 
@@ -369,20 +361,35 @@ void run_benchmark(int m, int n, int t, int bitsize, int c, int schemetype, bool
     
     cout << ">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> Scheme " << schemetype << " <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< " << endl;
     cout << "---------- Share Generation ---------- " << endl;
-    for (int i=0;i<m;i++){
-        idd=config["id_list"][i];
-        elements = read_elements_to_vector(dirname + "/elements/"+ to_string(idd)+".txt");
-        Elementholder elementholder(idd, elements.data(), (int)elements.size(), bitsize);
-        auto begin = chrono::high_resolution_clock::now();            
-        bins_shares = generate_shares_of_id(elementholder, keyholder, num_bins, max_bin_size, context, elem_holder,schemetype, fast_sharegen);    
-        auto end = chrono::high_resolution_clock::now();    
-        auto dur = end - begin;
-        auto ms = chrono::duration_cast<chrono::milliseconds>(dur).count();
-        sum_sharegen += ms;
-        for (int j=0; j<num_bins;j++){
+    vector<std::future<vector<vector<Share>>>> futures(m);
+    for (int i = 0; i < m; i++) {
+        futures[i] = (std::async(std::launch::async, [&, i]() {
+            int idd = config["id_list"][i];
+            elements = read_elements_to_vector(dirname + "/elements/" + to_string(idd) + ".txt");
+            Elementholder elementholder(idd, elements.data(), (int)elements.size(), bitsize);
+
+            return generate_shares_of_id(elementholder, keyholder, num_bins, max_bin_size, context, elem_holder, schemetype, fast_sharegen);
+        }));
+    }
+
+    for (int i = 0; i < m; i++) {
+        bins_shares = futures[i].get();  // Blocks until the future is ready
+        for (int j = 0; j < num_bins; j++) {
             bins_people_shares[j].push_back(bins_shares[j]);
         }
     }
+
+
+//    for (int i=0;i<m;i++){
+//        idd=config["id_list"][i];
+//        elements = read_elements_to_vector(dirname + "/elements/"+ to_string(idd)+".txt");
+//        Elementholder elementholder(idd, elements.data(), (int)elements.size(), bitsize);
+//        bins_shares = generate_shares_of_id(elementholder, keyholder, num_bins, max_bin_size, context, elem_holder,schemetype, fast_sharegen);
+//        for (int j=0; j<num_bins;j++){
+//            bins_people_shares[j].push_back(bins_shares[j]);
+//        }
+//    }
+
 
     cout << "---------- Share Generation Complete  ----------" << endl;
     cout << "Average Share Generation time for each party: " << sum_sharegen/m << " miliseconds (including padding)" << endl;
@@ -420,6 +427,32 @@ void run_benchmark(int m, int n, int t, int bitsize, int c, int schemetype, bool
             log_file << "---------- Reconstruction ---------- " << endl;
             log_file << "---------- Reconstruction complete ----------" << endl;
             log_file <<"\tTotal time: " << ms << " miliseconds" << endl;
+
+
+
+            stringstream ss;
+            ss << "Ans: ";
+
+            // Loop through each bin
+            for (size_t i = 0; i < ans.size(); ++i) {
+                ss << "\nBin " << i << ": [";
+                // Loop through each user in the bin
+                for (size_t j = 0; j < ans[i].size(); ++j) {
+                    ss << "{User " << j << ": [";
+                    // Loop through each element in the user's intersection subset
+                    for (size_t k = 0; k < ans[i][j].size(); ++k) {
+                        ss << ans[i][j][k];
+                        if (k != ans[i][j].size() - 1) ss << ", ";
+                    }
+                    ss << "]}";
+                    if (j != ans[i].size() - 1) ss << ", ";
+                }
+                ss << "]";
+            }
+            ss << endl;
+
+// Write to file
+            log_file << ss.str();
             log_file.close();
         }
 
