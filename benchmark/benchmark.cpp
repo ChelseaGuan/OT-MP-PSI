@@ -14,6 +14,7 @@
 #include <chrono>
 #include <set>
 #include <future>
+#include <omp.h>
 #include "../global/psi_utils.h"
 #include "../client/Recon.h"
 #include "../client/Elementholder.h"
@@ -360,25 +361,44 @@ void run_benchmark(int m, int n, int t, int bitsize, int c, int schemetype, bool
 
     cout << "---------- Share Generation ---------- " << endl;
 
-    vector<std::future<vector<vector<Share>>>> futures(m);
-    for (int i = 0; i < m; i++) {
-        int idd = config["id_list"][i]; // This is safe to capture by value
-        auto elements = read_elements_to_vector(dirname + "/elements/" + to_string(idd) + ".txt");
-        Elementholder elementholder(idd, elements.data(), elements.size(), bitsize); // This should be created fresh for each thread
+//    #pragma omp parallel for reduction(+:sum_sharegen) private(bins_shares)
+//    for (int i=0; i<m; i++) {
+//        int idd = config["id_list"][i];
+//        vector<int> elements = read_elements_to_vector(dirname + "/elements/" + to_string(idd) + ".txt");
+//        Elementholder elementholder(idd, elements.data(), (int)elements.size(), bitsize);
+//
+//        auto begin = chrono::high_resolution_clock::now();
+//        bins_shares = generate_shares_of_id(elementholder, keyholder, num_bins, max_bin_size, context, elem_holder, schemetype, fast_sharegen);
+//        auto end = chrono::high_resolution_clock::now();
+//
+//        auto dur = end - begin;
+//        auto ms = chrono::duration_cast<chrono::milliseconds>(dur).count();
+//
+//    #pragma omp critical
+//        {
+//            sum_sharegen += ms;
+//            for (int j=0; j<num_bins; j++){
+//                bins_people_shares[j].push_back(bins_shares[j]);
+//            }
+//        }
+//    }
 
-        // Capture only the required objects by value for thread safety
-        futures[i] = std::async(std::launch::async,
-                                [elementholder, &keyholder, num_bins, max_bin_size, &context, &elem_holder, schemetype, fast_sharegen]() mutable {
-                                    return generate_shares_of_id(elementholder, keyholder, num_bins, max_bin_size, context, elem_holder, schemetype, fast_sharegen);
-                                });
-    }
 
-    for (int i = 0; i < m; i++) {
-        auto bins_shares = futures[i].get();  // Blocks until the future is ready
-        for (int j = 0; j < num_bins; j++) {
-            bins_people_shares[j].push_back(bins_shares[j]);
-        }
-    }
+
+
+//    #pragma omp parallel for
+//    for (int i = 0; i < m; i++) {
+//        int idd = config["id_list"][i];
+//        elements = read_elements_to_vector(dirname + "/elements/" + std::to_string(idd) + ".txt");
+//        Elementholder elementholder(idd, elements.data(), elements.size(), bitsize);
+//        bins_shares = generate_shares_of_id(elementholder, keyholder, num_bins, max_bin_size, context, elem_holder, schemetype, fast_sharegen);
+//
+//        #pragma omp critical
+//        for (int j = 0; j < num_bins; j++) {
+//            bins_people_shares[j].push_back(bins_shares[j]);
+//        }
+//    }
+
 
 
 //    vector<std::future<vector<vector<Share>>>> futures(m);
@@ -402,16 +422,39 @@ void run_benchmark(int m, int n, int t, int bitsize, int c, int schemetype, bool
 //    }
 
 
-
-//    for (int i=0;i<m;i++){
-//        idd=config["id_list"][i];
-//        elements = read_elements_to_vector(dirname + "/elements/"+ to_string(idd)+".txt");
-//        Elementholder elementholder(idd, elements.data(), (int)elements.size(), bitsize);
-//        bins_shares = generate_shares_of_id(elementholder, keyholder, num_bins, max_bin_size, context, elem_holder,schemetype, fast_sharegen);
-//        for (int j=0; j<num_bins;j++){
+//    vector<std::future<vector<vector<Share>>>> futures(m);
+//    for (int i = 0; i < m; i++) {
+//        futures[i] = (std::async(std::launch::async, [&, i]() {
+//            int idd = config["id_list"][i];
+//            elements = read_elements_to_vector(dirname + "/elements/" + to_string(idd) + ".txt");
+//            Elementholder elementholder(idd, elements.data(), (int)elements.size(), bitsize);
+//
+//            return generate_shares_of_id(elementholder, keyholder, num_bins, max_bin_size, context, elem_holder, schemetype, fast_sharegen);
+//        }));
+//    }
+//
+//    for (int i = 0; i < m; i++) {
+//        bins_shares = futures[i].get();  // Blocks until the future is ready
+//        for (int j = 0; j < num_bins; j++) {
 //            bins_people_shares[j].push_back(bins_shares[j]);
 //        }
 //    }
+
+
+    for (int i=0;i<m;i++){
+        idd=config["id_list"][i];
+        elements = read_elements_to_vector(dirname + "/elements/"+ to_string(idd)+".txt");
+        Elementholder elementholder(idd, elements.data(), (int)elements.size(), bitsize);
+        auto begin = chrono::high_resolution_clock::now();
+        bins_shares = generate_shares_of_id(elementholder, keyholder, num_bins, max_bin_size, context, elem_holder,schemetype, fast_sharegen);
+        auto end = chrono::high_resolution_clock::now();
+        auto dur = end - begin;
+        auto ms = chrono::duration_cast<chrono::milliseconds>(dur).count();
+        sum_sharegen += ms;
+        for (int j=0; j<num_bins;j++){
+            bins_people_shares[j].push_back(bins_shares[j]);
+        }
+    }
 
 
     cout << "---------- Share Generation Complete  ----------" << endl;
