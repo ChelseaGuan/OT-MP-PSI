@@ -51,10 +51,15 @@ string client::send_to_server(string arg, string raw_message)
         }
     } while ( bytesReceived == MAX_BUF_LENGTH );
     response.resize(strlen(response.c_str()));
-    if(close(sock)<0)
-    {
-        cout<<"Error: connection could not be closed"<<endl;
-    } 
+
+    if (sock >= 0) {
+//        int close_sock = close(sock);
+        if(close(sock)<0)
+        {
+            cout << "Error: connection could not be closed, Error: " << strerror(errno) << endl;
+        }
+        sock = -1;
+    }
 
     if(arg.compare("S1_R1") == 0)
     {

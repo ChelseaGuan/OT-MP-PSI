@@ -355,29 +355,52 @@ void run_benchmark(int m, int n, int t, int bitsize, int c, int schemetype, bool
             return;
         } else
             cout << "Connected to server" << endl;
-    } else {
-        cout << "Proceeding without server (fast)" << endl;
     }
-    
     cout << ">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> Scheme " << schemetype << " <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< " << endl;
+
     cout << "---------- Share Generation ---------- " << endl;
+
     vector<std::future<vector<vector<Share>>>> futures(m);
     for (int i = 0; i < m; i++) {
-        futures[i] = (std::async(std::launch::async, [&, i]() {
-            int idd = config["id_list"][i];
-            elements = read_elements_to_vector(dirname + "/elements/" + to_string(idd) + ".txt");
-            Elementholder elementholder(idd, elements.data(), (int)elements.size(), bitsize);
+        int idd = config["id_list"][i]; // This is safe to capture by value
+        auto elements = read_elements_to_vector(dirname + "/elements/" + to_string(idd) + ".txt");
+        Elementholder elementholder(idd, elements.data(), elements.size(), bitsize); // This should be created fresh for each thread
 
-            return generate_shares_of_id(elementholder, keyholder, num_bins, max_bin_size, context, elem_holder, schemetype, fast_sharegen);
-        }));
+        // Capture only the required objects by value for thread safety
+        futures[i] = std::async(std::launch::async,
+                                [elementholder, &keyholder, num_bins, max_bin_size, &context, &elem_holder, schemetype, fast_sharegen]() mutable {
+                                    return generate_shares_of_id(elementholder, keyholder, num_bins, max_bin_size, context, elem_holder, schemetype, fast_sharegen);
+                                });
     }
 
     for (int i = 0; i < m; i++) {
-        bins_shares = futures[i].get();  // Blocks until the future is ready
+        auto bins_shares = futures[i].get();  // Blocks until the future is ready
         for (int j = 0; j < num_bins; j++) {
             bins_people_shares[j].push_back(bins_shares[j]);
         }
     }
+
+
+//    vector<std::future<vector<vector<Share>>>> futures(m);
+//    for (int i = 0; i < m; i++) {
+//        int idd = config["id_list"][i]; // This is safe to capture by value
+//        auto elements = read_elements_to_vector(dirname + "/elements/" + to_string(idd) + ".txt");
+//        Elementholder elementholder(idd, elements.data(), elements.size(), bitsize); // This should be created fresh for each thread
+//
+//        // Capture only the required objects by value for thread safety
+//        futures[i] = std::async(std::launch::async,
+//                                [elementholder, &keyholder, num_bins, max_bin_size, &context, &elem_holder, schemetype, fast_sharegen]() mutable {
+//                                    return generate_shares_of_id(elementholder, keyholder, num_bins, max_bin_size, context, elem_holder, schemetype, fast_sharegen);
+//                                });
+//    }
+//
+//    for (int i = 0; i < m; i++) {
+//        auto bins_shares = futures[i].get();  // Blocks until the future is ready
+//        for (int j = 0; j < num_bins; j++) {
+//            bins_people_shares[j].push_back(bins_shares[j]);
+//        }
+//    }
+
 
 
 //    for (int i=0;i<m;i++){
