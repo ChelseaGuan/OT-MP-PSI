@@ -349,6 +349,7 @@ void run_benchmark(int m, int n, int t, int bitsize, int c, int schemetype, bool
 
     cout << "---------- Share Generation ---------- " << endl;
 
+    auto begin = chrono::high_resolution_clock::now();
 
     #pragma omp for nowait
     for (int i = 0; i < m; i++) {
@@ -371,6 +372,9 @@ void run_benchmark(int m, int n, int t, int bitsize, int c, int schemetype, bool
         }
     }
 
+    auto end = chrono::high_resolution_clock::now();
+    auto dur = end - begin;
+    auto ms = chrono::duration_cast<chrono::milliseconds>(dur).count();
 
     cout << "---------- Share Generation Complete  ----------" << endl;
     cout << "Average Share Generation time for each party: " << sum_sharegen/m << " miliseconds (including padding)" << endl;
@@ -380,10 +384,10 @@ void run_benchmark(int m, int n, int t, int bitsize, int c, int schemetype, bool
     {
         ofstream log_file;
         log_file.open(dirname + "//logfile.txt",std::ofstream::out | std::ofstream::app);
-        log_file << ">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> Scheme " << schemetype << " <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< " << endl;
+        log_file << ">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> Scheme " << schemetype << " Parallelized <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< " << endl;
         log_file << "---------- Share Generation ---------- " << endl;
         log_file << "---------- Share Genration Complete  ----------" << endl;
-        log_file << "\tAverage Share Generation time for each party: " << sum_sharegen/m << " miliseconds (including padding)" << endl;
+        log_file << "\tAverage Share Generation time: " << ms << " milliseconds (including padding)" << endl;
         log_file.close();
     }
 
