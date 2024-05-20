@@ -31,7 +31,7 @@ string get_dirname(int m, int n, int t, int bitsize, int c, bool for_recon=false
     if (for_recon)
         return "benchmark_recon_"+to_string(m)+to_string(n)+to_string(t)+to_string(bitsize)+"_"+to_string(c);
     else
-        return "benchmark_"+to_string(m)+to_string(n)+to_string(t)+to_string(bitsize)+"_"+to_string(c);
+        return "benchmark_"+to_string(m)+"_"+to_string(n)+"_"+to_string(t)+"_"+to_string(bitsize)+"_"+to_string(c);
 
 }
 
