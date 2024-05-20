@@ -33,7 +33,7 @@ string get_dirname(int m, int n, int t, int bitsize, int c, bool for_recon=false
     if (for_recon)
         return "benchmark_recon_"+to_string(m)+to_string(n)+to_string(t)+to_string(bitsize)+"_"+to_string(c);
     else
-        return "benchmark_"+to_string(m)+to_string(n)+to_string(t)+to_string(bitsize)+"_"+to_string(c);
+        return "benchmark_"+to_string(m)+"_"+to_string(n)+"_"+to_string(t)+"_"+to_string(bitsize)+"_"+to_string(c);
 
 }
 
@@ -370,69 +370,6 @@ void run_benchmark(int m, int n, int t, int bitsize, int c, int schemetype, bool
             }
         }
     }
-
-
-
-
-
-//    #pragma omp parallel for reduction(+:sum_sharegen) private(bins_shares)
-//    for (int i=0; i<m; i++) {
-//        int idd = config["id_list"][i];
-//        vector<int> elements = read_elements_to_vector(dirname + "/elements/" + to_string(idd) + ".txt");
-//        Elementholder elementholder(idd, elements.data(), (int)elements.size(), bitsize);
-//
-//        auto begin = chrono::high_resolution_clock::now();
-//        bins_shares = generate_shares_of_id(elementholder, keyholder, num_bins, max_bin_size, context, elem_holder, schemetype, fast_sharegen);
-//        auto end = chrono::high_resolution_clock::now();
-//
-//        auto dur = end - begin;
-//        auto ms = chrono::duration_cast<chrono::milliseconds>(dur).count();
-//
-//    #pragma omp critical
-//        {
-//            sum_sharegen += ms;
-//            for (int j=0; j<num_bins; j++){
-//                bins_people_shares[j].push_back(bins_shares[j]);
-//            }
-//        }
-//    }
-
-
-
-//    #pragma omp parallel for
-//    for (int i = 0; i < m; i++) {
-//        int idd = config["id_list"][i];
-//        elements = read_elements_to_vector(dirname + "/elements/" + std::to_string(idd) + ".txt");
-//        Elementholder elementholder(idd, elements.data(), elements.size(), bitsize);
-//        bins_shares = generate_shares_of_id(elementholder, keyholder, num_bins, max_bin_size, context, elem_holder, schemetype, fast_sharegen);
-//
-//        #pragma omp critical
-//        for (int j = 0; j < num_bins; j++) {
-//            bins_people_shares[j].push_back(bins_shares[j]);
-//        }
-//    }
-
-
-
-
-//    vector<std::future<vector<vector<Share>>>> futures(m);
-//    for (int i = 0; i < m; i++) {
-//        futures[i] = (std::async(std::launch::async, [&, i]() {
-//            int idd = config["id_list"][i];
-//            elements = read_elements_to_vector(dirname + "/elements/" + to_string(idd) + ".txt");
-//            Elementholder elementholder(idd, elements.data(), (int)elements.size(), bitsize);
-//
-//            return generate_shares_of_id(elementholder, keyholder, num_bins, max_bin_size, context, elem_holder, schemetype, fast_sharegen);
-//        }));
-//    }
-//
-//    for (int i = 0; i < m; i++) {
-//        bins_shares = futures[i].get();  // Blocks until the future is ready
-//        for (int j = 0; j < num_bins; j++) {
-//            bins_people_shares[j].push_back(bins_shares[j]);
-//        }
-//    }
-
 
 
     cout << "---------- Share Generation Complete  ----------" << endl;
