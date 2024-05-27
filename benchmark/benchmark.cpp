@@ -383,7 +383,7 @@ void run_benchmark(int m, int n, int t, int bitsize, int c, int schemetype, bool
             bins_people_shares[j].push_back(bins_shares[j]);
         }
     }
-
+    int totalTimeMS = sum_sharegen;
     cout << "---------- Share Generation Complete  ----------" << endl;
     cout << "Average Share Generation time for each party: " << sum_sharegen/m << " miliseconds (including padding)" << endl;
     write_shares_to_file(bins_people_shares,dirname,schemetype,num_bins,m,max_bin_size);
@@ -411,15 +411,19 @@ void run_benchmark(int m, int n, int t, int bitsize, int c, int schemetype, bool
         auto end = chrono::high_resolution_clock::now();    
         auto dur = end - begin;
         auto ms = chrono::duration_cast<chrono::milliseconds>(dur).count();
+        totalTimeMS += ms;
         cout << "---------- Reconstruction complete ----------" << endl; 
         cout << "\tTotal time: " << ms << " miliseconds" << endl;
+        cout <<"\tTotal time (share gen + recon): " << totalTimeMS << " miliseconds" << endl;
+
         if(log)
         {
             ofstream log_file;
             log_file.open(dirname + "//logfile.txt",std::ofstream::out | std::ofstream::app);
             log_file << "---------- Reconstruction ---------- " << endl;
             log_file << "---------- Reconstruction complete ----------" << endl;
-            log_file <<"\tTotal time: " << ms << " miliseconds" << endl;
+            log_file <<"\tReconstruction total time: " << ms << " miliseconds" << endl;
+            log_file <<"\tTotal time (share gen + recon): " << totalTimeMS << " miliseconds" << endl;
             log_file.close();
         }
 
