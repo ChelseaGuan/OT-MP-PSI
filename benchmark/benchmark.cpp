@@ -382,13 +382,15 @@ void run_benchmark(int m, int n, int t, int bitsize, int c, int schemetype, bool
     cout << "Total Share Generation time for all " << m << " parties: " << msShareGen << " ms" << endl;
     write_shares_to_file(bins_people_shares,dirname,schemetype,num_bins,m,max_bin_size);
 
-    string outputFileName = ".//Mahdavi_Original_" + dirname + ".txt";
+//    string theodore = "Theodore_";
+    string theodore = "";
+    string outputFileName = "Mahdavi_Parallel_" + dirname + ".txt";
 
     if(log)
     {
         ofstream log_file;
         log_file.open(outputFileName,std::ofstream::out | std::ofstream::app);
-        log_file << ">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> Mahdavi " << schemetype << " Parallelized <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< " << endl;
+        log_file << ">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> Mahdavi Parallelized " << theodore << " <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< " << endl;
         log_file << "Share Generation time for " << m << " parties: " << msShareGen << " ms" << endl;
         log_file.close();
     }
