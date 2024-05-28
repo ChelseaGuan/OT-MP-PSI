@@ -367,7 +367,7 @@ void run_benchmark(int m, int n, int t, int bitsize, int c, int schemetype, bool
         cout << "Proceeding without server (fast)" << endl;
     }
     
-    cout << ">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> Scheme " << schemetype << " <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< " << endl;
+    cout << ">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> Scheme " << schemetype << " Theodore <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< " << endl;
     cout << "---------- Share Generation ---------- " << endl;
     for (int i=0;i<m;i++){
         idd=config["id_list"][i];
@@ -391,8 +391,8 @@ void run_benchmark(int m, int n, int t, int bitsize, int c, int schemetype, bool
     if(log)
     {
         ofstream log_file;
-        log_file.open(dirname + "//logfile.txt",std::ofstream::out | std::ofstream::app);
-        log_file << ">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> Scheme " << schemetype << " <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< " << endl;
+        log_file.open(dirname + "//logfileTheo.txt",std::ofstream::out | std::ofstream::app);
+        log_file << ">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> Scheme " << schemetype << " Theodore <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< " << endl;
         log_file << "---------- Share Generation ---------- " << endl;
         log_file << "---------- Share Genration Complete  ----------" << endl;
         log_file << "\tAverage Share Generation time for each party: " << sum_sharegen/m << " miliseconds (including padding)" << endl;
@@ -419,7 +419,7 @@ void run_benchmark(int m, int n, int t, int bitsize, int c, int schemetype, bool
         if(log)
         {
             ofstream log_file;
-            log_file.open(dirname + "//logfile.txt",std::ofstream::out | std::ofstream::app);
+            log_file.open(dirname + "//logfileTheo.txt",std::ofstream::out | std::ofstream::app);
             log_file << "---------- Reconstruction ---------- " << endl;
             log_file << "---------- Reconstruction complete ----------" << endl;
             log_file <<"\tReconstruction total time: " << ms << " miliseconds" << endl;
