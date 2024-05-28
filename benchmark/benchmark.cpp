@@ -347,7 +347,6 @@ void run_benchmark(int m, int n, int t, int bitsize, int c, int schemetype, bool
     }
     vector<int> elements;
     int idd;
-    int sum_sharegen = 0;
 
     Keyholder keyholder;  
     keyholder.initialize_from_file(context, dirname + "/keyholder_context.json");
@@ -367,63 +366,81 @@ void run_benchmark(int m, int n, int t, int bitsize, int c, int schemetype, bool
         cout << "Proceeding without server (fast)" << endl;
     }
     
-    cout << ">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> Scheme " << schemetype << " Theodore <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< " << endl;
+    cout << ">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> Scheme " << schemetype << " <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< " << endl;
     cout << "---------- Share Generation ---------- " << endl;
+    auto beginShareGen = chrono::high_resolution_clock::now();
     for (int i=0;i<m;i++){
         idd=config["id_list"][i];
         elements = read_elements_to_vector(dirname + "/elements/"+ to_string(idd)+".txt");
         Elementholder elementholder(idd, elements.data(), (int)elements.size(), bitsize);
-        auto begin = chrono::high_resolution_clock::now();            
-        bins_shares = generate_shares_of_id(elementholder, keyholder, num_bins, max_bin_size, context, elem_holder,schemetype, fast_sharegen);    
-        auto end = chrono::high_resolution_clock::now();    
-        auto dur = end - begin;
-        auto ms = chrono::duration_cast<chrono::milliseconds>(dur).count();
-        sum_sharegen += ms;
+        bins_shares = generate_shares_of_id(elementholder, keyholder, num_bins, max_bin_size, context, elem_holder,schemetype, fast_sharegen);
         for (int j=0; j<num_bins;j++){
             bins_people_shares[j].push_back(bins_shares[j]);
         }
     }
-    int totalTimeMS = sum_sharegen;
-    cout << "---------- Share Generation Complete  ----------" << endl;
-    cout << "Average Share Generation time for each party: " << sum_sharegen/m << " miliseconds (including padding)" << endl;
-    write_shares_to_file(bins_people_shares,dirname,schemetype,num_bins,m,max_bin_size);
+    auto endShareGen = chrono::high_resolution_clock::now();
+    auto durShareGen = endShareGen - beginShareGen;
+    auto msShareGen = chrono::duration_cast<chrono::milliseconds>(durShareGen).count();
 
+    cout << "---------- Share Generation Complete  ----------" << endl;
+    cout << "Total Share Generation time for all " << m << " parties: " << msShareGen << " ms" << endl;
+    write_shares_to_file(bins_people_shares,dirname,schemetype,num_bins,m,max_bin_size);
+//    string theodore = "Theodore_";
+    string theodore = "";
+    string outputFileName = "Mahdavi_Original_" + theodore + dirname + ".txt";
     if(log)
     {
         ofstream log_file;
-        log_file.open(dirname + "//logfileTheo.txt",std::ofstream::out | std::ofstream::app);
-        log_file << ">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> Scheme " << schemetype << " Theodore <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< " << endl;
-        log_file << "---------- Share Generation ---------- " << endl;
-        log_file << "---------- Share Genration Complete  ----------" << endl;
-        log_file << "\tAverage Share Generation time for each party: " << sum_sharegen/m << " miliseconds (including padding)" << endl;
+        log_file.open(outputFileName,std::ofstream::out | std::ofstream::app);
+        log_file << ">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> Mahdavi " << theodore << " <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< " << endl;
+        log_file << "Share Generation time for " << m << " parties: " << msShareGen << " ms" << endl;
         log_file.close();
     }
 
-    if (!only_sharegen){
+    if (!only_sharegen) {
         cout << "---------- Reconstruction ---------- " << endl;
-
-        vector<vector<vector<int>>> ans;//3D binary vector where bin<user<is element in intersection>>>
+        auto beginRecon = chrono::high_resolution_clock::now();
+        vector<vector<vector<int>>> ans; //3D binary vector where bin<user<is element in intersection>>>
         int sum = 0;
-        auto begin = chrono::high_resolution_clock::now();    
         for (int i=0;i<num_bins;i++){
             ans.push_back(recon_in_bin_x(bins_people_shares[i], context, m, max_bin_size, schemetype, &sum));
         }
-        auto end = chrono::high_resolution_clock::now();    
-        auto dur = end - begin;
-        auto ms = chrono::duration_cast<chrono::milliseconds>(dur).count();
-        totalTimeMS += ms;
-        cout << "---------- Reconstruction complete ----------" << endl; 
-        cout << "\tTotal time: " << ms << " miliseconds" << endl;
-        cout <<"\tTotal time (share gen + recon): " << totalTimeMS << " miliseconds" << endl;
+        auto endRecon = chrono::high_resolution_clock::now();
+        auto durRecon = endRecon - beginRecon;
+        auto msRecon = chrono::duration_cast<chrono::milliseconds>(durRecon).count();
+        cout << "---------- Reconstruction complete ----------" << endl;
+        cout << "Reconstruction time: " << msRecon << " ms" << endl;
+        cout << "Total time: " << msShareGen + msRecon << " ms" << endl;
 
         if(log)
         {
             ofstream log_file;
-            log_file.open(dirname + "//logfileTheo.txt",std::ofstream::out | std::ofstream::app);
-            log_file << "---------- Reconstruction ---------- " << endl;
-            log_file << "---------- Reconstruction complete ----------" << endl;
-            log_file <<"\tReconstruction total time: " << ms << " miliseconds" << endl;
-            log_file <<"\tTotal time (share gen + recon): " << totalTimeMS << " miliseconds" << endl;
+            log_file.open(outputFileName,std::ofstream::out | std::ofstream::app);
+            log_file <<"Reconstruction time: " << msRecon << " ms" << endl;
+            log_file << "Total time: " << msShareGen + msRecon << " ms" << endl;
+
+            stringstream ss;
+            ss << "Ans: ";
+            // Loop through each bin
+            for (size_t i = 0; i < ans.size(); ++i) {
+                ss << "\nBin " << i << ": [";
+                // Loop through each user in the bin
+                for (size_t j = 0; j < ans[i].size(); ++j) {
+                    ss << "{User " << j << ": [";
+                    // Loop through each element in the user's intersection subset
+                    for (size_t k = 0; k < ans[i][j].size(); ++k) {
+                        ss << ans[i][j][k];
+                        if (k != ans[i][j].size() - 1) ss << ", ";
+                    }
+                    ss << "]}";
+                    if (j != ans[i].size() - 1) ss << ", ";
+                }
+                ss << "]";
+            }
+            ss << endl;
+
+            // Write to file
+            log_file << ss.str() << endl;
             log_file.close();
         }
 
