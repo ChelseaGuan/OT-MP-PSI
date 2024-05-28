@@ -199,11 +199,13 @@ vector<vector<Share>> generate_shares_of_id(
         shares_bins.push_back(vector<Share>(0));
     }
     if(!fast_sharegen){
+        #pragma omp for
         for (int i = 0; i< elementholder.num_elements; i++){
             if (scheme==1)
                 share_x = elementholder.get_share_1(context, elementholder.elements[i], elem_holder, num_bins);
             // Mapping element -> SS
             // cout << "For user " << elementholder.id << ", element: " << elementholder.elements[i] << " corresponds to " << ZZ_to_str(share_x.SS) << endl;
+            #pragma omp critical
             shares_bins[conv<int>(share_x.bin)].push_back(share_x);
         }
     }
@@ -349,7 +351,7 @@ void run_benchmark(int m, int n, int t, int bitsize, int c, int schemetype, bool
 
     cout << "---------- Share Generation ---------- " << endl;
 
-    auto begin = chrono::high_resolution_clock::now();
+    auto beginShareGen = chrono::high_resolution_clock::now();
 
     #pragma omp for nowait
     for (int i = 0; i < m; i++) {
@@ -372,46 +374,46 @@ void run_benchmark(int m, int n, int t, int bitsize, int c, int schemetype, bool
         }
     }
 
-    auto end = chrono::high_resolution_clock::now();
-    auto dur = end - begin;
-    auto ms = chrono::duration_cast<chrono::milliseconds>(dur).count();
+    auto endShareGen = chrono::high_resolution_clock::now();
+    auto durShareGen = endShareGen - beginShareGen;
+    auto msShareGen = chrono::duration_cast<chrono::milliseconds>(durShareGen).count();
 
     cout << "---------- Share Generation Complete  ----------" << endl;
-    cout << "Average Share Generation time for each party: " << sum_sharegen/m << " miliseconds (including padding)" << endl;
+    cout << "Total Share Generation time for all " << m << " parties: " << msShareGen << " ms" << endl;
     write_shares_to_file(bins_people_shares,dirname,schemetype,num_bins,m,max_bin_size);
+
+    string outputFileName = ".//Mahdavi_Original_" + dirname + ".txt";
 
     if(log)
     {
         ofstream log_file;
-        log_file.open(dirname + "//logfile.txt",std::ofstream::out | std::ofstream::app);
-        log_file << ">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> Scheme " << schemetype << " Parallelized <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< " << endl;
-        log_file << "---------- Share Generation ---------- " << endl;
-        log_file << "---------- Share Genration Complete  ----------" << endl;
-        log_file << "\tAverage Share Generation time: " << ms << " milliseconds (including padding)" << endl;
+        log_file.open(outputFileName,std::ofstream::out | std::ofstream::app);
+        log_file << ">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> Mahdavi " << schemetype << " Parallelized <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< " << endl;
+        log_file << "Share Generation time for " << m << " parties: " << msShareGen << " ms" << endl;
         log_file.close();
     }
 
-    if (!only_sharegen){
+    if (!only_sharegen) {
         cout << "---------- Reconstruction ---------- " << endl;
-
-        vector<vector<vector<int>>> ans;//3D binary vector where bin<user<is element in intersection>>>
+        auto beginRecon = chrono::high_resolution_clock::now();
+        vector<vector<vector<int>>> ans; //3D binary vector where bin<user<is element in intersection>>>
         int sum = 0;
-        auto begin = chrono::high_resolution_clock::now();    
         for (int i=0;i<num_bins;i++){
             ans.push_back(recon_in_bin_x(bins_people_shares[i], context, m, max_bin_size, schemetype, &sum));
         }
-        auto end = chrono::high_resolution_clock::now();    
-        auto dur = end - begin;
-        auto ms = chrono::duration_cast<chrono::milliseconds>(dur).count();
-        cout << "---------- Reconstruction complete ----------" << endl; 
-        cout << "\tTotal time: " << ms << " miliseconds" << endl;
+        auto endRecon = chrono::high_resolution_clock::now();
+        auto durRecon = endRecon - beginRecon;
+        auto msRecon = chrono::duration_cast<chrono::milliseconds>(durRecon).count();
+        cout << "---------- Reconstruction complete ----------" << endl;
+        cout << "Reconstruction time: " << msRecon << " ms" << endl;
+        cout << "Total time: " << msShareGen + msRecon << " ms" << endl;
+
         if(log)
         {
             ofstream log_file;
-            log_file.open(dirname + "//logfile.txt",std::ofstream::out | std::ofstream::app);
-            log_file << "---------- Reconstruction ---------- " << endl;
-            log_file << "---------- Reconstruction complete ----------" << endl;
-            log_file <<"\tTotal time: " << ms << " miliseconds" << endl;
+            log_file.open(outputFileName,std::ofstream::out | std::ofstream::app);
+            log_file <<"Reconstruction time: " << msRecon << " ms" << endl;
+            log_file << "Total time: " << msShareGen + msRecon << " ms" << endl;
 
 
 
@@ -436,8 +438,8 @@ void run_benchmark(int m, int n, int t, int bitsize, int c, int schemetype, bool
             }
             ss << endl;
 
-// Write to file
-            log_file << ss.str();
+            // Write to file
+            log_file << ss.str() << endl;
             log_file.close();
         }
 
