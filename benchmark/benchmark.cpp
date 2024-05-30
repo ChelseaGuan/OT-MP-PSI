@@ -33,7 +33,7 @@ string get_dirname(int m, int n, int t, int bitsize, int c, bool for_recon=false
     if (for_recon)
         return "benchmark_recon_"+to_string(m)+to_string(n)+to_string(t)+to_string(bitsize)+"_"+to_string(c);
     else
-        return "benchmark_"+to_string(m)+"_"+to_string(n)+"_"+to_string(t)+"_"+to_string(bitsize)+"_"+to_string(c);
+        return "benchmark_"+to_string(m)+"_"+to_string(n)+"_"+to_string(t);
 
 }
 
@@ -384,13 +384,13 @@ void run_benchmark(int m, int n, int t, int bitsize, int c, int schemetype, bool
 
 //    string theodore = "Theodore_";
     string theodore = "";
-    string outputFileName = "Mahdavi_Parallel_" + dirname + ".txt";
+    string outputFileName = "Mahdavi_Parallelized_" + dirname + ".txt";
 
     if(log)
     {
         ofstream log_file;
         log_file.open(outputFileName,std::ofstream::out | std::ofstream::app);
-        log_file << ">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> Mahdavi Parallelized " << theodore << " <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< " << endl;
+        log_file << ">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> Mahdavi Parallelized " << theodore << "<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< " << endl;
         log_file << "Share Generation time for " << m << " parties: " << msShareGen << " ms" << endl;
         log_file.close();
     }
