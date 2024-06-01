@@ -387,7 +387,7 @@ void run_benchmark(int m, int n, int t, int bitsize, int c, int schemetype, bool
     write_shares_to_file(bins_people_shares,dirname,schemetype,num_bins,m,max_bin_size);
 //    string theodore = "Theodore_";
     string theodore = "";
-    string outputFileName = "Mahdavi_" + theodore + dirname + ".txt";
+    string outputFileName = "Mahdavi_Original_" + theodore + dirname + ".txt";
     if(log)
     {
         ofstream log_file;
